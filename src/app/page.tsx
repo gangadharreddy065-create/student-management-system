@@ -1,66 +1,75 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { prisma } from '@/lib/prisma';
+import Link from 'next/link';
+import DeleteButton from '@/components/DeleteButton';
+import { Student } from '@prisma/client';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Dashboard() {
+  const students = await prisma.student.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1>Student Dashboard</h1>
+          <p>Manage your students, courses, and enrollments efficiently.</p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+
+      <div className="table-container">
+        {students.length === 0 ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+            <p>No students found. Add your first student to get started.</p>
+            <Link href="/students/new" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+              + Add Student
+            </Link>
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Course</th>
+                <th>Enrollment Date</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map((student: Student) => (
+                <tr key={student.id}>
+                  <td>
+                    <div style={{ fontWeight: 500 }}>{student.firstName} {student.lastName}</div>
+                  </td>
+                  <td>{student.email}</td>
+                  <td>{student.course}</td>
+                  <td>{student.enrollmentDate.toLocaleDateString()}</td>
+                  <td>
+                    <span className={`badge badge-${student.status.toLowerCase()}`}>
+                      {student.status}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <Link 
+                      href={`/students/${student.id}/edit`} 
+                      className="btn btn-secondary"
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                    >
+                      Edit
+                    </Link>
+                    <DeleteButton id={student.id} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
